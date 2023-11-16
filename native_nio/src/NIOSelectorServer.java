@@ -2,10 +2,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.ByteBuffer;
+import java.nio.channels.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -40,8 +39,21 @@ public class NIOSelectorServer {
                     // 将新链接也注册到selector
                     socketChannel.register(selector, SelectionKey.OP_READ);
                 }
-
-                if (selectionKey.isConnectable())
+                // 读事件
+                if (selectionKey.isReadable()){
+                    SocketChannel socketChannel = (SocketChannel)selectionKey.channel();
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+                    int readCount = 1024;
+                    String readStr = "";
+                    while (readCount == 1024){
+                        readCount = socketChannel.read(byteBuffer);
+                        readStr += byteBuffer.toString();
+                    }
+                    System.out.println("客户端：" + readStr);
+                    socketChannel.write(ByteBuffer.wrap("hello man !!!".getBytes(StandardCharsets.UTF_8)));
+                }
+                //防止同一个读事件被重复触发
+                iterator.remove();
             }
         }
     }
